@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Antipolo City National Science and Technology High School - HPTA Grade 9 Bernoulli</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin:0;
+      font-family:'Poppins',sans-serif;
+      background:linear-gradient(to bottom,#f8fbff,#e6f0fa);
+      color:#333;
+    }
+    h1,h2,h3 { font-weight:600; margin:8px 0; }
+    input,select {
+      padding:8px; margin:4px; border:1px solid #ccc; border-radius:6px;
+    }
+    button {
+      margin:5px; padding:8px 12px;
+      background:#003366; color:white; border:none;
+      border-radius:6px; cursor:pointer; font-weight:600; transition:0.3s;
+    }
+    button:hover { background:#0a4aa1; }
+    .center-card {
+      max-width:420px; margin:10vh auto; padding:24px;
+      background:#fff; border-radius:12px;
+      box-shadow:0 6px 24px rgba(0,0,0,0.08);
+    }
+    .link {
+      color:#003366; cursor:pointer; display:block; text-align:center;
+      margin-top:10px; text-decoration:underline;
+    }
+    #app { display:none; }
+    #appHeader {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:10px 16px; background:#001a66; color:#fff;
+      position:sticky; top:0; z-index:10;
+    }
+    #appHeader .centered {
+      display:flex; align-items:center; gap:12px;
+      margin:0 auto;
+    }
+    #appHeader img { max-height:60px; }
+    #appHeader h1 {
+      margin:0; font-size:20px; font-weight:600; text-align:center;
+    }
+    #logoutBtn {
+      width:auto; padding:8px 14px;
+      background:#cc0000; border-radius:8px;
+    }
+    #logoutBtn:hover { background:#e60000; }
+    table {
+      width:100%; border-collapse:collapse; margin-top:20px;
+      background:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.1);
+    }
+    table,th,td { border:1px solid #ccc; text-align:center; padding:8px; }
+    th { background:#003366; color:white; }
+    tr:nth-child(even){background:#f2f6fa;}
+    .dashboard {
+      display:grid; grid-template-columns:repeat(2,1fr);
+      gap:20px; margin-top:30px;
+    }
+    .card {
+      background:white; border-radius:10px;
+      padding:20px; box-shadow:0 4px 8px rgba(0,0,0,0.1);
+    }
+    .receipt { display:none; }
+    .note { font-size:12px; color:#555; text-align:center; margin-top:8px; }
+  </style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login" class="center-card">
+  <h2>Login</h2>
+  <input type="text" id="loginUser" placeholder="Username" autocomplete="username">
+  <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password">
+  <button onclick="login()">Login</button>
+  <span class="link" onclick="showRegister()">Register</span>
+  <span class="link" onclick="showReset()">Forgot Password?</span>
+  <div class="note">Accounts are stored locally in your browser.</div>
+</div>
+
+<!-- Register -->
+<div id="register" class="center-card" style="display:none;">
+  <h2>Register</h2>
+  <input type="text" id="regUser" placeholder="New Username" autocomplete="username">
+  <input type="password" id="regPass" placeholder="New Password" autocomplete="new-password">
+  <button onclick="register()">Create Account</button>
+  <span class="link" onclick="showLogin()">Back to Login</span>
+</div>
+
+<!-- Reset -->
+<div id="reset" class="center-card" style="display:none;">
+  <h2>Reset Password</h2>
+  <input type="text" id="resetUser" placeholder="Username" autocomplete="username">
+  <input type="password" id="newPass" placeholder="New Password" autocomplete="new-password">
+  <button onclick="resetPassword()">Reset Password</button>
+  <span class="link" onclick="showLogin()">Back to Login</span>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div id="appHeader">
+    <div class="centered">
+      <img src="logo.png" alt="School Logo">
+      <h1>
+        Antipolo City National Science and Technology High School<br>
+        HPTA - Grade 9 Bernoulli
+      </h1>
+    </div>
+    <button id="logoutBtn" onclick="logout()">Logout</button>
+  </div>
+
+  <div style="padding:20px;">
+    <h3>Add Contribution</h3>
+    <input type="text" id="student" placeholder="Student Name">
+    <input type="text" id="parent" placeholder="Parent Name">
+    <input type="number" id="amount" placeholder="Amount">
+    <input type="text" id="remarks" placeholder="Remarks">
+    <input type="date" id="date">
+    <select id="attendance">
+      <option value="Present">Present</option>
+      <option value="Absent">Absent</option>
+    </select>
+    <button onclick="addEntry()">Add Entry</button>
+    <button onclick="exportExcel()">Export to Excel</button>
+    <button onclick="saveData()">Save Data</button>
+    <button onclick="loadData()">Load Data</button>
+    <button onclick="clearData()">Clear Data</button>
+
+    <table id="contribTable">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Parent</th>
+          <th>Amount</th>
+          <th>Date</th>
+          <th>Attendance</th>
+          <th>Remarks</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="dashboard">
+      <div class="card">
+        <h3>Summary</h3>
+        <p id="totalAmount">Total Contributions: ₱0</p>
+        <p id="totalEntries">Total Entries: 0</p>
+        <p id="averageAmount">Average Contribution: ₱0</p>
+        <p id="uniqueParents">Unique Parents: 0</p>
+      </div>
+      <div class="card"><canvas id="attendanceChart"></canvas></div>
+      <div class="card"><canvas id="parentChart"></canvas></div>
+      <div class="card"><canvas id="dailyChart"></canvas></div>
+    </div>
+
+    <div id="receipt" class="receipt">
+      <div class="logo"><img src="logo.png" alt="School Logo"></div>
+      <h2>Antipolo City National Science and Technology High School</h2>
+      <h3>HPTA - Grade 9 Bernoulli</h3>
+      <p id="receiptNo"></p>
+      <p id="receiptDate"></p>
+      <p id="receiptDetails"></p>
+      <br><br>
+      <table width="100%">
+        <tr>
+          <td style="text-align:center">_________________<br>Parent Signature</td>
+          <td style="text-align:center">_________________<br>Treasurer Signature</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // --- Login/Register System ---
+  function showRegister(){document.getElementById('login').style.display='none';document.getElementById('register').style.display='block';document.getElementById('reset').style.display='none';}
+  function showLogin(){document.getElementById('login').style.display='block';document.getElementById('register').style.display='none';document.getElementById('reset').style.display='none';}
+  function showReset(){document.getElementById('login').style.display='none';document.getElementById('register').style.display='none';document.getElementById('reset').style.display='block';}
+  function register(){let u=document.getElementById('regUser').value.trim();let p=document.getElementById('regPass').value;if(!u||!p)return alert('Enter username and password.');if(localStorage.getItem('ptaUser_'+u))return alert('Username exists.');localStorage.setItem('ptaUser_'+u,p);alert('Registered!');showLogin();}
+  function login(){let u=document.getElementById('loginUser').value.trim();let p=document.getElementById('loginPass').value;let saved=localStorage.getItem('ptaUser_'+u);if(saved&&saved===p){document.getElementById('login').style.display='none';document.getElementById('register').style.display='none';document.getElementById('reset').style.display='none';document.getElementById('app').style.display='block';}else alert('Invalid login.');}
+  function resetPassword(){let u=document.getElementById('resetUser').value.trim();let np=document.getElementById('newPass').value;if(!localStorage.getItem('ptaUser_'+u))return alert('User not found.');localStorage.setItem('ptaUser_'+u,np);alert('Password reset!');showLogin();}
+  function logout(){document.getElementById('app').style.display='none';document.getElementById('login').style.display='block';document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';}
+
+  // --- PTA Tracker System ---
+  let entries = [];
+  let receiptCounter = 1;
+  let attendanceChart, parentChart, dailyChart;
+
+  function addEntry() {
+    let student=document.getElementById('student').value;
+    let parent=document.getElementById('parent').value;
+    let amount=parseFloat(document.getElementById('amount').value);
+    let date=document.getElementById('date').value;
+    let attendance=document.getElementById('attendance').value;
+    let remarks=document.getElementById('remarks').value;
+    if(!student||!parent||!amount||!date){alert('Please fill in all fields');return;}
+    let receiptNo="RCT-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+(receiptCounter++);
+    let entry={student,parent,amount,date,attendance,remarks,receiptNo};
+    entries.push(entry);
+    updateTable();updateDashboard();
+  }
+
+  function updateTable() {
+    let tbody=document.querySelector("#contribTable tbody");
+    tbody.innerHTML="";
+    entries.forEach((e,index)=>{let row=tbody.insertRow();
+      row.insertCell(0).innerText=e.student;
+      row.insertCell(1).innerText=e.parent;
+      row.insertCell(2).innerText="₱"+e.amount;
+      row.insertCell(3).innerText=e.date;
+      row.insertCell(4).innerText=e.attendance;
+      row.insertCell(5).innerText=e.remarks;
+
+      let actionCell=row.insertCell(6);
+      // Receipt button
+      let receiptBtn=document.createElement("button");
+      receiptBtn.innerText="Print Receipt";
+      receiptBtn.onclick=()=>printReceipt(e);
+      actionCell.appendChild(receiptBtn);
+
+      // Delete button
+      let deleteBtn=document.createElement("button");
+      deleteBtn.innerHTML="🗑️";
+      deleteBtn.style.marginLeft="6px";
+      deleteBtn.onclick=()=>deleteEntry(index);
+      actionCell.appendChild(deleteBtn);
+    });
+  }
+
+  function deleteEntry(index) {
+    if (confirm("Are you sure you want to delete this entry?")) {
+      entries.splice(index, 1);
+      updateTable();
+      updateDashboard();
+    }
+  }
+
+  function printReceipt(e){
+    document.getElementById("receiptNo").innerText="Receipt No: "+e.receiptNo;
+    document.getElementById("receiptDate").innerText="Date: "+new Date().toLocaleDateString();
+    document.getElementById("receiptDetails").innerText="Received ₱"+e.amount+" from "+e.parent+" (Parent of "+e.student+") on "+e.date+". Remarks: "+e.remarks;
+    let receiptDiv=document.getElementById("receipt").innerHTML;
+    let w=window.open('', '', 'width=600,height=400');
+    w.document.write('<html><head><title>Receipt</title></head><body>'+receiptDiv+'</body></html>');
+    w.document.close();w.print();
+  }
+
+  function exportExcel(){
+    let ws_data=[["Student","Parent","Amount","Date","Attendance","Remarks"]];
+    entries.forEach(e=>{ws_data.push([e.student,e.parent,e.amount,e.date,e.attendance,e.remarks]);});
+    let wb=XLSX.utils.book_new();let ws=XLSX.utils.aoa_to_sheet(ws_data);
+    XLSX.utils.book_append_sheet(wb,ws,"Contributions");
+    XLSX.writeFile(wb,"contributions.xlsx");
+  }
+
+  function saveData(){localStorage.setItem("ptaEntries",JSON.stringify(entries));alert("Data saved locally!");}
+  function loadData(){let d=localStorage.getItem("ptaEntries");if(d){entries=JSON.parse(d);updateTable();updateDashboard();alert("Data loaded!");}else alert("No saved data.");}
+  function clearData(){if(confirm("Clear all saved data?")){localStorage.removeItem("ptaEntries");entries=[];updateTable();updateDashboard();}}
+
+  function updateDashboard(){
+    let total=entries.reduce((s,e)=>s+e.amount,0);
+    document.getElementById("totalAmount").innerText="Total Contributions: ₱"+total;
+    document.getElementById("totalEntries").innerText="Total Entries: "+entries.length;
+    document.getElementById("averageAmount").innerText="Average Contribution: ₱"+(entries.length?(total/entries.length).toFixed(2):0);
+    let parents=[...new Set(entries.map(e=>e.parent))];
+    document.getElementById("uniqueParents").innerText="Unique Parents: "+parents.length;
+
+    let presentCount=entries.filter(e=>e.attendance==="Present").length;
+    let absentCount=entries.filter(e=>e.attendance==="Absent").length;
+    if(attendanceChart)attendanceChart.destroy();
+    attendanceChart=new Chart(document.getElementById('attendanceChart'),{type:'pie',data:{labels:["Present","Absent"],datasets:[{data:[presentCount,absentCount],backgroundColor:["#4CAF50","#f44336"]}]}});
+
+    let parentTotals={};entries.forEach(e=>parentTotals[e.parent]=(parentTotals[e.parent]||0)+e.amount);
+    if(parentChart)parentChart.destroy();
+    parentChart=new Chart(document.getElementById('parentChart'),{type:'bar',data:{labels:Object.keys(parentTotals),datasets:[{label:'Contributions',data:Object.values(parentTotals),backgroundColor:"#2196F3"}]},options:{indexAxis:'y'}});
+
+    let dailyTotals={};entries.forEach(e=>dailyTotals[e.date]=(dailyTotals[e.date]||0)+e.amount);
+    if(dailyChart)dailyChart.destroy();
+    dailyChart=new Chart(document.getElementById('dailyChart'),{type:'line',data:{labels:Object.keys(dailyTotals),datasets:[{label:'Daily Total',data:Object.values(dailyTotals),borderColor:"#FF9800"}]}});
+  }
+</script>
+</body>
+</html>
